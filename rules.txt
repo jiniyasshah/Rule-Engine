@@ -1,0 +1,92 @@
+# SQL Injection Rules
+alert http any any -> any 80 (msg:"SQL Injection - Basic Injection"; content:"='"; nocase; sid:1000001; rev:1;)
+alert http any any -> any 80 (msg:"SQL Injection - UNION Based"; content:"union select"; nocase; sid:1000001; rev:1;)
+alert http any any -> any 80 (msg:"SQL Injection - Basic OR Pattern"; content:" or '1'='1"; nocase; sid:1000002; rev:1;)
+alert http any any -> any 80 (msg:"SQL Injection - Basic AND Pattern"; content:" and '1'='1"; nocase; sid:1000003; rev:1;)
+alert http any any -> any 80 (msg:"SQL Injection - Comment Pattern"; content:"--+"; sid:1000004; rev:1;)
+alert http any any -> any 80 (msg:"SQL Injection - Sleep Command"; content:"sleep("; nocase; sid:1000005; rev:1;)
+alert http any any -> any 80 (msg:"SQL Injection - Benchmark"; content:"benchmark("; nocase; sid:1000006; rev:1;)
+alert http any any -> any 80 (msg:"SQL Injection - Version Check MySQL"; content:"@@version"; nocase; sid:1000007; rev:1;)
+alert http any any -> any 80 (msg:"SQL Injection - System Table Access"; content:"information_schema"; nocase; sid:1000008; rev:1;)
+alert http any any -> any 80 (msg:"SQL Injection - CONCAT Function"; content:"concat("; nocase; sid:1000009; rev:1;)
+alert http any any -> any 80 (msg:"SQL Injection - Hex Encoding"; content:"0x3a"; nocase; sid:1000010; rev:1;)
+alert http any any -> any 80 (msg:"SQL Injection - Basic Injection"; content:"'"; nocase; sid:1000011; rev:1;)
+alert http any any -> any 80 (msg:"SQL Injection - UNION Based"; content:"union%20select"; nocase; sid:1000013; rev:1;)
+
+# XSS (Cross-Site Scripting) Rules
+alert http any any -> any 80 (msg:"XSS - Basic Script Tag"; content:"<script>"; nocase; sid:1000011; rev:1;)
+alert http any any -> any 80 (msg:"XSS - IMG Tag"; content:"<img src="; nocase; sid:1000012; rev:1;)
+alert http any any -> any 80 (msg:"XSS - OnMouseOver"; content:"onmouseover="; nocase; sid:1000013; rev:1;)
+alert http any any -> any 80 (msg:"XSS - OnLoad"; content:"onload="; nocase; sid:1000014; rev:1;)
+alert http any any -> any 80 (msg:"XSS - OnClick"; content:"onclick="; nocase; sid:1000015; rev:1;)
+alert http any any -> any 80 (msg:"XSS - JavaScript Protocol"; content:"javascript:"; nocase; sid:1000016; rev:1;)
+alert http any any -> any 80 (msg:"XSS - VBScript Protocol"; content:"vbscript:"; nocase; sid:1000017; rev:1;)
+alert http any any -> any 80 (msg:"XSS - Data Protocol"; content:"data:text/html"; nocase; sid:1000018; rev:1;)
+alert http any any -> any 80 (msg:"XSS - Base64 Encoded Script"; content:"base64,PHNjcmlwdD"; nocase; sid:1000019; rev:1;)
+alert http any any -> any 80 (msg:"XSS - SVG Script"; content:"<svg/onload="; nocase; sid:1000020; rev:1;)
+alert http any any -> any 80 (msg:"XSS - Basic Script Tag"; content:"%3Cscript%3E"; nocase; sid:1000021; rev:1;)
+alert http any any -> any 80 (msg:"XSS - IMG Tag"; content:"%3Cimg%20src%3D"; nocase; sid:1000022; rev:1;)
+alert http any any -> any 80 (msg:"XSS - OnMouseOver"; content:"onmouseover%3D"; nocase; sid:1000023; rev:1;)
+alert http any any -> any 80 (msg:"XSS - OnLoad"; content:"onload%3D"; nocase; sid:1000024; rev:1;)
+alert http any any -> any 80 (msg:"XSS - OnClick"; content:"onclick%3D"; nocase; sid:1000025; rev:1;)
+alert http any any -> any 80 (msg:"XSS - Data Protocol"; content:"data%3Atext%2Fhtml"; nocase; sid:1000026; rev:1;)
+alert http any any -> any 80 (msg:"XSS - Base64 Encoded Script"; content:"base64%2CPHNjcmlwdD"; nocase; sid:1000027; rev:1;)
+alert http any any -> any 80 (msg:"XSS - SVG Script"; content:"%3Csvg%2Fonload%3D"; nocase; sid:1000028; rev:1;)
+
+# Directory Traversal Rules
+alert http any any -> any 80 (msg:"Directory Traversal - Basic Pattern"; content:"../"; sid:1000021; rev:1;)
+alert http any any -> any 80 (msg:"Directory Traversal - Windows Drive"; content:"c:\\"; nocase; sid:1000022; rev:1;)
+alert http any any -> any 80 (msg:"Directory Traversal - etc passwd"; content:"/etc/passwd"; nocase; sid:1000023; rev:1;)
+alert http any any -> any 80 (msg:"Directory Traversal - Windows Boot"; content:"boot.ini"; nocase; sid:1000024; rev:1;)
+alert http any any -> any 80 (msg:"Directory Traversal - Double Encoding"; content:"%252e%252e%252f"; nocase; sid:1000025; rev:1;)
+
+# Command Injection Rules
+alert http any any -> any 80 (msg:"Command Injection - Basic Pattern"; content:"cmd="; sid:1000026; rev:1;)
+alert http any any -> any 80 (msg:"Command Injection - System Command"; content:"system("; nocase; sid:1000027; rev:1;)
+alert http any any -> any 80 (msg:"Command Injection - Eval Function"; content:"eval("; nocase; sid:1000028; rev:1;)
+alert http any any -> any 80 (msg:"Command Injection - Shell Execution"; content:"shell_exec("; nocase; sid:1000029; rev:1;)
+alert http any any -> any 80 (msg:"Command Injection - Pipe Symbol"; content:"|"; sid:1000030; rev:1;)
+
+# PHP Specific Attacks
+alert http any any -> any 80 (msg:"PHP - Code Injection"; content:"<?php"; nocase; sid:1000036; rev:1;)
+alert http any any -> any 80 (msg:"PHP - Config File Access"; content:"php.ini"; nocase; sid:1000037; rev:1;)
+alert http any any -> any 80 (msg:"PHP - Info Disclosure"; content:"phpinfo()"; nocase; sid:1000038; rev:1;)
+alert http any any -> any 80 (msg:"PHP - Session Poisoning"; content:"PHPSESSID="; nocase; sid:1000039; rev:1;)
+alert http any any -> any 80 (msg:"PHP - Suspicious Upload"; content:"multipart/form-data"; nocase; sid:1000040; rev:1;)
+
+# HTTP Response Splitting
+alert http any any -> any 80 (msg:"Response Splitting - CR/LF"; content:"%0d%0a"; nocase; sid:1000041; rev:1;)
+alert http any any -> any 80 (msg:"Response Splitting - Double CRLF"; content:"%0d%0a%0d%0a"; nocase; sid:1000042; rev:1;)
+alert http any any -> any 80 (msg:"Response Splitting - Set-Cookie"; content:"Set-Cookie:"; nocase; sid:1000043; rev:1;)
+
+# CSRF Attacks
+alert http any any -> any 80 (msg:"CSRF - Missing Token"; content:"csrf_token="; nocase; sid:1000044; rev:1;)
+alert http any any -> any 80 (msg:"CSRF - Token Manipulation"; content:"token=null"; nocase; sid:1000045; rev:1;)
+
+# Server-Side Template Injection
+alert http any any -> any 80 (msg:"Template Injection - Basic Pattern"; content:"${"; sid:1000046; rev:1;)
+alert http any any -> any 80 (msg:"Template Injection - Angular Pattern"; content:"{{"; sid:1000047; rev:1;)
+alert http any any -> any 80 (msg:"Template Injection - Velocity Pattern"; content:"#set"; nocase; sid:1000048; rev:1;)
+
+# XML Attacks
+alert http any any -> any 80 (msg:"XML - External Entity"; content:"<!ENTITY"; nocase; sid:1000049; rev:1;)
+alert http any any -> any 80 (msg:"XML - DTD Declaration"; content:"<!DOCTYPE"; nocase; sid:1000050; rev:1;)
+alert http any any -> any 80 (msg:"XML - XPath Injection"; content:"xpath="; nocase; sid:1000051; rev:1;)
+
+# Log4j Attacks
+alert http any any -> any 80 (msg:"Log4j - JNDI Lookup"; content:"${jndi:"; nocase; sid:1000052; rev:1;)
+alert http any any -> any 80 (msg:"Log4j - LDAP Injection"; content:"ldap://"; nocase; sid:1000053; rev:1;)
+alert http any any -> any 80 (msg:"Log4j - RMI Injection"; content:"rmi://"; nocase; sid:1000054; rev:1;)
+
+# NoSQL Injection
+alert http any any -> any 80 (msg:"NoSQL Injection - MongoDB Operation"; content:"$where:"; sid:1000055; rev:1;)
+alert http any any -> any 80 (msg:"NoSQL Injection - MongoDB Query"; content:"$ne:"; sid:1000056; rev:1;)
+alert http any any -> any 80 (msg:"NoSQL Injection - MongoDB Regex"; content:"$regex:"; sid:1000057; rev:1;)
+
+# Server-Side Request Forgery (SSRF)
+alert http any any -> any 80 (msg:"SSRF - Local File Access"; content:"file:///"; nocase; sid:1000058; rev:1;)
+
+# Common Web Attacks
+alert http any any -> any 80 (msg:"Attack - NULL Byte"; content:"%00"; sid:1000067; rev:1;)
+alert http any any -> any 80 (msg:"Attack - Control Characters"; content:"%0"; sid:1000068; rev:1;)
+alert http any any -> any 80 (msg:"Attack - Unicode Evasion"; content:"%u00"; sid:1000069; rev:1;)
