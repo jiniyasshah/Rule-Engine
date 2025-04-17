@@ -59,8 +59,47 @@ Rule RuleEngine::parseRule(const std::string& ruleString) {
     parseHeader(header, rule);
     parseOptions(options, rule);
 
-    // Only create regex pattern if content is specified
-    if (rule.options.find("content") != rule.options.end()) {
+    // Check if we have a pcre (regex) option
+    if (rule.options.find("pcre") != rule.options.end()) {
+        rule.isRegex = true;
+        std::string pcrePattern = rule.options["pcre"];
+        
+        // Remove quotes if present
+        if (pcrePattern.size() >= 2 && pcrePattern.front() == '/' && pcrePattern.back() == '/') {
+            pcrePattern = pcrePattern.substr(1, pcrePattern.size() - 2);
+        } else if (pcrePattern.size() >= 2 && pcrePattern.front() == '"' && pcrePattern.back() == '"') {
+            pcrePattern = pcrePattern.substr(1, pcrePattern.size() - 2);
+            
+            // For quoted patterns, check if they include delimiters and flags
+            size_t lastSlash = pcrePattern.rfind('/');
+            if (pcrePattern.front() == '/' && lastSlash != 0 && lastSlash != std::string::npos) {
+                std::string flags = pcrePattern.substr(lastSlash + 1);
+                pcrePattern = pcrePattern.substr(1, lastSlash - 1);
+                
+                // Handle the 'i' flag for case insensitivity
+                if (flags.find('i') != std::string::npos) {
+                    rule.nocase = true;
+                }
+            }
+        }
+        
+        rule.pattern = pcrePattern;
+        
+        // Create the regex pattern with proper flags
+        try {
+            if (rule.nocase) {
+                rule.regexPattern = std::regex(rule.pattern, 
+                    std::regex::optimize | std::regex::icase);
+            } else {
+                rule.regexPattern = std::regex(rule.pattern, 
+                    std::regex::optimize);
+            }
+        } catch (const std::regex_error& e) {
+            throw std::runtime_error("Invalid regex pattern: " + pcrePattern + " - " + e.what());
+        }
+    }
+    // Only create regex pattern if content is specified and pcre is not specified
+    else if (rule.options.find("content") != rule.options.end()) {
         std::string content = rule.options["content"];
         
         // Remove quotes if present
@@ -89,8 +128,14 @@ Rule RuleEngine::parseRule(const std::string& ruleString) {
                     std::regex::optimize);
             }
         } catch (const std::regex_error& e) {
-            throw std::runtime_error("Invalid regex pattern: " + content);
+            throw std::runtime_error("Invalid regex pattern: " + content + " - " + e.what());
         }
+    }
+
+    // Store SID if it exists
+    auto sidIt = rule.options.find("sid");
+    if (sidIt != rule.options.end()) {
+        rule.sid = sidIt->second;
     }
 
     return rule;
@@ -128,7 +173,7 @@ void RuleEngine::parseOptions(const std::string& options, Rule& rule) {
     }
 }
 
-std::string urlDecode(const std::string &str) {
+std::string RuleEngine::urlDecode(const std::string &str) {
     std::string decodedString;
     char ch;
     int i, ii;
@@ -229,6 +274,13 @@ bool RuleEngine::validateRule(const Rule& rule) const {
 
     // Validate direction
     if (rule.direction != "->" && rule.direction != "<>") {
+        return false;
+    }
+
+    // Validate that rule has either content or pcre pattern
+    if (rule.options.find("content") == rule.options.end() && 
+        rule.options.find("pcre") == rule.options.end()) {
+        std::cerr << "Warning: Rule must have either 'content' or 'pcre' option" << std::endl;
         return false;
     }
 

@@ -11,8 +11,16 @@ public:
     // Singleton instance getter
     static NetworkUploader& getInstance();
 
-    // Initialize the uploader
-    bool initialize(const std::wstring& userAgent = L"NIDS-PacketUploader/1.0");
+    // Initialize the uploader with configuration
+    bool initialize(
+        const std::wstring& serverHost = L"",
+        uint16_t serverPort = 443,
+        const std::wstring& serverPath = L"",
+        const std::wstring& userAgent = L"NIDS-PacketUploader/1.0"
+    );
+    
+    // Check if the uploader is initialized
+    bool isInitialized() const { return initialized; }
     
     // Configuration
     void setServerDetails(const std::wstring& host, uint16_t port, const std::wstring& path);
@@ -47,4 +55,5 @@ private:
     std::wstring serverHost;
     uint16_t serverPort;
     std::wstring serverPath;
+    bool initialized;
 };

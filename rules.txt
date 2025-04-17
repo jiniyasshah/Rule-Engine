@@ -13,6 +13,16 @@ alert http any any -> any 80 (msg:"SQL Injection - Hex Encoding"; content:"0x3a"
 alert http any any -> any 80 (msg:"SQL Injection - Basic Injection"; content:"'"; nocase; sid:1000011; rev:1;)
 alert http any any -> any 80 (msg:"SQL Injection - UNION Based"; content:"union%20select"; nocase; sid:1000013; rev:1;)
 
+# SQL Injection Rules with regex patterns
+alert http any any -> any 80 (msg:"SQL Injection - Regex Pattern"; pcre:"/(\%27)|(\')|(\-\-)|(%23)|(#)/i"; sid:2000001; rev:1;)
+alert http any any -> any 80 (msg:"SQL Injection - UNION Attack Pattern"; pcre:"/union\s+select/i"; sid:2000002; rev:1;)
+alert http any any -> any 80 (msg:"SQL Injection - OR Pattern"; pcre:"/((\%27)|(\'))(\s|\+)*((\%6F)|o|(\%4F))((\%72)|r|(\%52))/i"; sid:2000003; rev:1;)
+
+# XSS Rules with regex patterns
+alert http any any -> any 80 (msg:"XSS - Script Tag Detection"; pcre:"/<script[^>]*>[\s\S]*?<\/script>/i"; sid:2000004; rev:1;)
+alert http any any -> any 80 (msg:"XSS - Event Handler"; pcre:"/on(load|click|mouseover|mousemove|mouseout)=([\"'])?[^\"']*\(/i"; sid:2000005; rev:1;)
+alert http any any -> any 80 (msg:"XSS - JavaScript Protocol"; pcre:"/javascript:[^\"']+/i"; sid:2000006; rev:1;)
+
 # XSS (Cross-Site Scripting) Rules
 alert http any any -> any 80 (msg:"XSS - Basic Script Tag"; content:"<script>"; nocase; sid:1000011; rev:1;)
 alert http any any -> any 80 (msg:"XSS - IMG Tag"; content:"<img src="; nocase; sid:1000012; rev:1;)

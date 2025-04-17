@@ -11,10 +11,15 @@ NetworkUploader& NetworkUploader::getInstance() {
 }
 
 NetworkUploader::NetworkUploader() 
-    : hSession(NULL), hConnect(NULL), hRequest(NULL), serverPort(80) {}
+    : hSession(NULL), hConnect(NULL), hRequest(NULL), serverPort(80), initialized(false) {}
 
-// Match the exact signature from the header file
-bool NetworkUploader::initialize(const std::wstring& userAgent) {
+// Updated initialize method with server details
+bool NetworkUploader::initialize(
+    const std::wstring& host,
+    uint16_t port,
+    const std::wstring& path,
+    const std::wstring& userAgent
+) {
     cleanup();  // Ensure clean state
     
     hSession = WinHttpOpen(userAgent.c_str(),
@@ -23,7 +28,16 @@ bool NetworkUploader::initialize(const std::wstring& userAgent) {
         WINHTTP_NO_PROXY_BYPASS,
         0);
     
-    return (hSession != NULL);
+    if (hSession == NULL) {
+        return false;
+    }
+
+    if (!host.empty()) {
+        setServerDetails(host, port, path);
+    }
+    
+    initialized = true;
+    return true;
 }
 
 void NetworkUploader::setServerDetails(const std::wstring& host, 
@@ -125,6 +139,7 @@ void NetworkUploader::cleanup() {
         WinHttpCloseHandle(hSession);
         hSession = NULL;
     }
+    initialized = false;
 }
 
 NetworkUploader::~NetworkUploader() {

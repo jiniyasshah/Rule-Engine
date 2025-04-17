@@ -65,20 +65,29 @@ std::string HttpHandler::inspectRequest(const std::string& httpRequest) {
 
         if (!matchResult.empty()) {
             auto& uploader = NetworkUploader::getInstance();
-    
-            // Initialize once (maybe in your main.cpp)
-            static bool initialized = false;
-            if (!initialized) {
-                initialized = uploader.initialize();
-                uploader.setServerDetails(L"nids-web.vercel.app", 443, L"/api/pusher");
+            
+            // Create an enhanced JSON that includes the match result
+            std::ostringstream enhancedJson;
+            enhancedJson << "{";
+            
+            // Add original request data, removing the outer braces
+            std::string requestJson = httpRequest;
+            if (!requestJson.empty() && requestJson.front() == '{' && requestJson.back() == '}') {
+                requestJson = requestJson.substr(1, requestJson.length() - 2);
             }
-
-            // Upload packet data - FIX: remove reference to undefined 'result' variable
-            // if(result.empty()){  <-- THIS IS THE ERROR
-            //    return true;
-            // }
-
-            if (!uploader.uploadPacketData(httpRequest)) {
+            
+            enhancedJson << requestJson;
+            
+            // Add comma if needed
+            if (!requestJson.empty() && !requestJson.empty() && requestJson.back() != ',') {
+                enhancedJson << ",";
+            }
+            
+            // Add the match result
+            enhancedJson << "\"match_result\":\"" << matchResult << "\"}";
+            
+            // Upload the enhanced JSON data
+            if (!uploader.isInitialized() || !uploader.uploadPacketData(enhancedJson.str())) {
                 // Handle error - maybe log it
                 std::cerr << "Failed to upload packet data" << std::endl;
             }  
