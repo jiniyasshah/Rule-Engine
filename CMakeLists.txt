@@ -20,7 +20,8 @@ add_executable(CppSocketServer
     main.cpp 
     codebase/rule_engine.cpp 
     codebase/http_handler.cpp 
-    codebase/network_uploader.cpp)
+    codebase/network_uploader.cpp
+    codebase/dos.cpp)
 
 # Link required Windows libraries
 target_link_libraries(CppSocketServer Ws2_32)

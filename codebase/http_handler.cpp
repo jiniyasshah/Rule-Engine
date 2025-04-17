@@ -5,7 +5,11 @@
 #include <string>
 #include <algorithm>
 
-HttpHandler::HttpHandler(RuleEngine& ruleEngine) : ruleEngine(ruleEngine) {}
+HttpHandler::HttpHandler(RuleEngine& ruleEngine) : ruleEngine(ruleEngine), dosProtection(nullptr) {}
+
+void HttpHandler::setDOSProtection(DOSProtection* dosProtection) {
+    this->dosProtection = dosProtection;
+}
 
 // Simple JSON parsing without external libraries
 std::string getJsonValue(const std::string& json, const std::string& key) {
@@ -48,8 +52,43 @@ std::string getJsonValue(const std::string& json, const std::string& key) {
     return "";
 }
 
+std::string HttpHandler::extractClientIP(const std::string& httpRequest) {
+    // Try to extract IP from the request JSON
+    std::string clientIP = getJsonValue(httpRequest, "client_ip");
+    
+    // If not found, try to extract from X-Forwarded-For header
+    if (clientIP.empty()) {
+        clientIP = getJsonValue(httpRequest, "x-forwarded-for");
+    }
+    
+    // If still not found, try to extract from remote_addr
+    if (clientIP.empty()) {
+        clientIP = getJsonValue(httpRequest, "remote_addr");
+    }
+    
+    // Default to a placeholder if we can't find an IP
+    if (clientIP.empty()) {
+        clientIP = "unknown_ip";
+    }
+    
+    return clientIP;
+}
+
 std::string HttpHandler::inspectRequest(const std::string& httpRequest) {
     try {
+
+        if (dosProtection != nullptr) {
+            std::string clientIP = extractClientIP(httpRequest);
+            
+            // Register this request
+            dosProtection->registerRequest(clientIP);
+            
+            // Check if the client has exceeded the threshold
+            if (!dosProtection->isAllowed(clientIP)) {
+                std::cout << "DOS protection: Blocking request from " << clientIP << std::endl;
+                return "false"; // Block the request due to DOS protection
+            }
+        }
         // Simple parsing of JSON without using JsonCpp
         std::string url = getJsonValue(httpRequest, "url");
         std::string method = getJsonValue(httpRequest, "method");
@@ -59,7 +98,7 @@ std::string HttpHandler::inspectRequest(const std::string& httpRequest) {
         std::string requestData = method + " " + url + "\n" + body;
         
         std::cout << "Inspecting request: " << url << std::endl;
-        
+        std::cout << "HttpReq: " <<  httpRequest << std::endl;
         // Match the request data against the rules
         std::string matchResult = ruleEngine.match(requestData);
 
@@ -103,3 +142,4 @@ std::string HttpHandler::inspectRequest(const std::string& httpRequest) {
         return "false"; // Block on exceptions
     }
 }
+

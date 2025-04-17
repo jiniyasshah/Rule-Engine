@@ -12,19 +12,26 @@
 #include "./headers/rule_engine.h"
 #include "./headers/http_handler.h"
 #include "./headers/network_uploader.h"
+#include "headers/dos.h"
 #pragma comment(lib, "Ws2_32.lib")
+
 RuleEngine ruleEngine;
 HttpHandler* httpHandler = nullptr;
 SOCKET listenSocket = INVALID_SOCKET;
+DOSProtection* dosProtection = nullptr;
+
 std::atomic<bool> running(true);
 std::mutex coutMutex;
+
 // Thread pool variables
 const int MAX_THREADS = 20;
+
 std::vector<std::thread> threadPool;
 std::mutex threadPoolMutex;
 std::condition_variable threadPoolCondition;
 std::queue<SOCKET> clientQueue;
 std::atomic<int> activeThreads(0);
+
 void signalHandler(int signal) {
     std::lock_guard<std::mutex> lock(coutMutex);
     std::cout << "\nShutdown signal received, closing server..." << std::endl;
@@ -35,6 +42,7 @@ void signalHandler(int signal) {
     // Wake up all worker threads
     threadPoolCondition.notify_all();
 }
+
 bool initializeRuleEngine(const std::string& rulesFilePath) {
     std::cout << "Loading rules from " << rulesFilePath << std::endl;
     bool result = ruleEngine.loadRules(rulesFilePath);
@@ -45,9 +53,11 @@ bool initializeRuleEngine(const std::string& rulesFilePath) {
     std::cout << "Rules loaded successfully!" << std::endl;
     return true;
 }
+
 void initializeHttpHandler() {
     httpHandler = new HttpHandler(ruleEngine);
 }
+
 bool initializeWinsock() {
     WSADATA wsaData;
     int result = WSAStartup(MAKEWORD(2, 2), &wsaData);
@@ -58,6 +68,17 @@ bool initializeWinsock() {
     std::cout << "Winsock initialized successfully" << std::endl;
     return true;
 }
+
+void initializeDOSProtection() {
+    // Create a new DOS protection instance with threshold of 20 requests per 10 seconds
+    dosProtection = new DOSProtection(20, 10);
+    
+    // Set DOS protection in the HTTP handler
+    if (httpHandler != nullptr && dosProtection != nullptr) {
+        httpHandler->setDOSProtection(dosProtection);
+    }
+}
+
 SOCKET setupListeningSocket(int port) {
     SOCKET socket = ::socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (socket == INVALID_SOCKET) {
@@ -90,6 +111,7 @@ SOCKET setupListeningSocket(int port) {
     std::cout << "Socket setup complete, listening on port " << port << std::endl;
     return socket;
 }
+
 std::string analyzeRequest(const std::string& data) {
     if (httpHandler != nullptr) {
         try {
@@ -107,6 +129,7 @@ std::string analyzeRequest(const std::string& data) {
     // Fallback logic if httpHandler fails
     return data.find("malicious") != std::string::npos ? "false" : "true";
 }
+
 void handleClient(SOCKET clientSocket) {
     // Increment active thread count
     activeThreads++;
@@ -143,6 +166,7 @@ void handleClient(SOCKET clientSocket) {
     // Decrement active thread count
     activeThreads--;
 }
+
 // Thread pool worker function
 void threadPoolWorker() {
     while (running) {
@@ -169,6 +193,7 @@ void threadPoolWorker() {
         }
     }
 }
+
 int main(int argc, char* argv[]) {
     std::cout << "Starting NIDS Rule Engine" << std::endl;
     // Initialize signal handler
@@ -185,6 +210,7 @@ int main(int argc, char* argv[]) {
     }
     // Initialize HTTP Handler
     initializeHttpHandler();
+    initializeDOSProtection();
     // Initialize NetworkUploader
     auto& uploader = NetworkUploader::getInstance();
     if (!uploader.initialize()) {
@@ -197,6 +223,7 @@ int main(int argc, char* argv[]) {
     }
     // Get server port
     int port = 12345;
+
     // Setup listening socket
     listenSocket = setupListeningSocket(port);
     if (listenSocket == INVALID_SOCKET) {
@@ -262,6 +289,7 @@ int main(int argc, char* argv[]) {
     }
     WSACleanup();
     delete httpHandler;
+    delete dosProtection;
     std::cout << "Server shut down successfully" << std::endl;
     return 0;
 }
